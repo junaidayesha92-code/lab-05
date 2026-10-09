@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -32,6 +33,7 @@ fun CityListScreen(
     cities: List<City>,
     onAddCity: (City) -> Unit,
     onUpdateCity: (City, City) -> Unit,
+    onDeleteCity: (City) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var newCityName by remember { mutableStateOf("") }
@@ -40,6 +42,8 @@ fun CityListScreen(
     var selectedCity by remember { mutableStateOf<City?>(null) }
     var editedCityName by remember { mutableStateOf("") }
     var editedProvinceName by remember { mutableStateOf("") }
+    var showOptions by remember { mutableStateOf(false) }
+    var showEditFields by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -52,6 +56,8 @@ fun CityListScreen(
                     showAddCityFields = !showAddCityFields
                     if (showAddCityFields) {
                         selectedCity = null
+                        showOptions = false
+                        showEditFields = false
                         editedCityName = ""
                         editedProvinceName = ""
                     }
@@ -104,7 +110,7 @@ fun CityListScreen(
                 }
             }
         }
-        if (selectedCity != null) {
+        if (selectedCity != null && showEditFields) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -146,6 +152,7 @@ fun CityListScreen(
                             )
 
                             selectedCity = null
+                            showEditFields = false
                             editedCityName = ""
                             editedProvinceName = ""
                         }
@@ -155,11 +162,14 @@ fun CityListScreen(
                 }
             }
         }
+
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             itemsIndexed(cities) { index, city ->
                 CityRow(
                     city = city,
                     onClick = {
+                        showEditFields = false
+                        showOptions = true
                         showAddCityFields = false
                         newCityName = ""
                         newProvinceName = ""
@@ -172,6 +182,37 @@ fun CityListScreen(
                     HorizontalDivider()
                 }
             }
+        }
+
+        val cityForOptions = selectedCity
+        if (showOptions && cityForOptions != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showOptions = false
+                    selectedCity = null
+                },
+                title = { Text(cityForOptions.name) },
+                text = { Text("What would you like to do?") },
+                confirmButton = {
+                    Button(onClick = {
+                        showOptions = false
+                        showEditFields = true
+                    }) {
+                        Text("UPDATE")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        onDeleteCity(cityForOptions)
+                        showOptions = false
+                        selectedCity = null
+                        editedCityName = ""
+                        editedProvinceName = ""
+                    }) {
+                        Text("DELETE")
+                    }
+                }
+            )
         }
     }
 }
@@ -213,7 +254,8 @@ fun CityListScreenPreview() {
                 City("Calgary", "AB")
             ),
             onAddCity = {},
-            onUpdateCity = { _, _ -> }
+            onUpdateCity = { _, _ -> },
+            onDeleteCity = {}
         )
     }
 }
